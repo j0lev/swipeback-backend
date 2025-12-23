@@ -55,6 +55,26 @@ class HeroUpdate(HeroBase):
     age: int | None = None
     secret_name: str | None = None
 
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    username: str | None = None
+
+
+class User(SQLModel):
+    username: str = Field(primary_key=True, index=True)
+    email: str | None = None
+    full_name: str | None = None
+    disabled: bool | None = None
+
+class UserInDB(User, table=True):
+    hashed_password: str
+
+
+class UserCreate(User):
+    plain_password: str
 
 
 POSTGRESQL_URL = "postgresql://jonathan@localhost:5432/mydb"
@@ -85,6 +105,30 @@ def create_hero(hero: HeroCreate, session: SessionDep):
     session.commit()
     session.refresh(db_hero)
     return hero
+
+    # TODO: add duplicate check
+    user = User.model_validate(user) # not sure if this is necassary here
+
+@app.post("/users", response_model=User)
+def create_user(user: UserCreate, session: SessionDep):
+    db_user = UserInDB(
+        **user.model_dump(),
+        hashed_password=get_password_hash(user.plain_password)
+    )
+    potentially_existing_db_user = session.get(UserInDB, user.username)
+    if potentially_existing_db_user:
+        raise HTTPException(status_code=409, detail="Username already taken")
+    session.add(db_user)
+    session.commit()
+    session.refresh(db_user)
+    return user
+
+def get_user(username: str, session: SessionDep):
+    user_db = session.get(UserInDB, username)
+    if not user_db:
+        raise HTTPException(status_code=404, detail="Hero not found")
+    user = user_db.model_dump(exclude={"hashed_password"})
+    return user
 
 # here again we use HeroPublic so data then is validated and serialized
 @app.get("/heroes", response_model=list[HeroPublic])
@@ -134,22 +178,7 @@ fake_users_db = {
     }
 }
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str
 
-class TokenData(BaseModel):
-    username: str | None = None
-
-
-class User(BaseModel):
-    username: str
-    email: str | None = None
-    full_name: str | None = None
-    disabled: bool | None = None
-
-class UserInDB(User):
-    hashed_password: str
 
 password_hash = PasswordHash.recommended()
 
@@ -160,18 +189,14 @@ def get_password_hash(password):
     return password_hash.hash(password)
 
 
-def get_user(db, username: str):
-    if username in db:
-        user_dict = db[username]
-        return UserInDB(**user_dict) # ** mean extra keyword arguments as dictionary
     
-def authenticate_user(fake_db, username: str, password: str):
-    user = get_user(fake_db, username)
-    if not user:
+def authenticate_user(username: str, password: str, session: SessionDep):
+    user_in_db = session.get(UserInDB, username)
+    if not user_in_db:
         return False
-    if not verify_password(password, user.hashed_password):
+    if not verify_password(password, user_in_db.hashed_password):
         return False
-    return user
+    return user_in_db
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
@@ -185,7 +210,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 
 
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], session: SessionDep):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -199,7 +224,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
         token_data = TokenData(username=username)
     except InvalidTokenError:
         raise credentials_exception
-    user = get_user(fake_users_db, username=token_data.username)
+    user = get_user(username=token_data.username, session=session)
     if user is None:
         raise credentials_exception
     return user
@@ -222,8 +247,8 @@ origins = [
 
 
 @app.post("/token")
-async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
-    user = authenticate_user(fake_users_db, form_data.username, form_data.password)
+async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], session: SessionDep):
+    user = authenticate_user(form_data.username, form_data.password, session)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
