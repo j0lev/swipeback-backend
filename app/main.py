@@ -23,6 +23,8 @@ SECRET_KEY = "02b68540063b967e41f15dced7b908d3a4e69fc6a7ac8ff658b4f73e1d55582a"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
+
+
 db_uri = os.environ.get("MONGODB_URI")
 
 client = MongoClient(db_uri, server_api=ServerApi('1'))
@@ -67,7 +69,7 @@ class User(SQLModel):
     username: str = Field(primary_key=True, index=True)
     email: str | None = None
     full_name: str | None = None
-    disabled: bool | None = None
+    disabled: bool | None = False
 
 class UserInDB(User, table=True):
     hashed_password: str
@@ -208,9 +210,9 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+OAuth2SchemeDI = Annotated[str, Depends(oauth2_scheme)]
 
-
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], session: SessionDep):
+async def get_current_user(token: OAuth2SchemeDI, session: SessionDep):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -229,7 +231,10 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], sessio
         raise credentials_exception
     return user
 
-async def  get_current_active_user(current_user: Annotated[User, Depends(get_current_user)]):
+GetCurrentUserDI = Annotated[User, Depends(get_current_user)]
+
+async def get_current_active_user(current_user: GetCurrentUserDI):
+    current_user = User.model_validate(current_user)
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
@@ -244,10 +249,12 @@ origins = [
     "https://swipeback.pages.dev",
 ]
 
+GetCurrentActiverUserDI = Annotated[User, Depends(get_current_active_user)]
 
+OAuth2PasswordRequestFormDI = Annotated[OAuth2PasswordRequestForm, Depends()]
 
 @app.post("/token")
-async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], session: SessionDep):
+async def login_for_access_token(form_data: OAuth2PasswordRequestFormDI, session: SessionDep):
     user = authenticate_user(form_data.username, form_data.password, session)
     if not user:
         raise HTTPException(
@@ -262,11 +269,11 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
     return Token(access_token=access_token, token_type="bearer")
 
 @app.get("/users/me/", response_model=User)
-async def read_users_me(current_user: Annotated[User, Depends(get_current_active_user)],):
+async def read_users_me(current_user: GetCurrentActiverUserDI):
     return current_user
 @app.get("/user/me/items")
 async def read_own_items(
-    current_user: Annotated[User, Depends(get_current_active_user)],
+    current_user: GetCurrentActiverUserDI
 ):
     return [{"item_id": "Foo", "owner": current_user.username}]
 
@@ -290,5 +297,5 @@ def read_item(item_id: int, q: Union[str, None] = None):
     return {"item_id": item_id, "q": q}
 
 @app.get("/items")
-async def read_items(token: Annotated[str, Depends(oauth2_scheme)]):
+async def read_items(token: OAuth2SchemeDI):
     return {"token": token}
