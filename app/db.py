@@ -21,11 +21,14 @@ from pydantic import BaseModel
 
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
+db_url = os.environ.get("DB_INTERNAL_URL")
 
+LOCAL_POSTGRESQL_URL = "postgresql://jonathan@localhost:5432/mydb"
 
-POSTGRESQL_URL = "postgresql://jonathan@localhost:5432/mydb"
+if not db_url:
+    db_url = LOCAL_POSTGRESQL_URL
 
-engine = create_engine(POSTGRESQL_URL)
+engine = create_engine(url=db_url)
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
