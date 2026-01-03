@@ -1,0 +1,65 @@
+from fastapi import Depends, FastAPI, HTTPException, status, Query, APIRouter
+from sqlmodel import SQLModel, Field, select
+
+from app.db import SessionDep
+from app.auth import CurrentActiveUserDI
+from datetime import datetime, timedelta, timezone
+from typing import Union, Annotated
+
+from contextlib import asynccontextmanager
+
+import jwt
+from jwt.exceptions import InvalidTokenError
+
+from pydantic import BaseModel
+from app.models import Session, Metric, Module, Hero
+
+class Question(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+
+    session_id: int = Field(foreign_key="session.id", index=True)
+
+    text: str
+
+class QuestionCreate(SQLModel):
+    text: str
+
+class QuestionPublic(SQLModel):
+    id: int
+    text: str
+
+router = APIRouter(prefix="/sessions", tags=["Questions"])
+
+@router.post("/{session_id}/questions", response_model=QuestionPublic)
+def create_question(
+    session_id: int,
+    data: QuestionCreate,
+    session: SessionDep,
+    user: CurrentActiveUserDI
+):
+    db_session = session.get(Session, session_id)
+    if not db_session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    question = Question(
+        session_id=session_id,
+        text=data.text
+    )
+
+    session.add(question)
+    session.commit()
+    session.refresh(question)
+
+    return question
+
+@router.get("/{session_id}/questions", response_model=List[QuestionPublic])
+def get_questions(
+    session_id: int,
+    session: SessionDep
+):
+    questions = session.exec(
+        select(Question).where(Question.session_id == session_id)
+    ).all()
+
+    return questions
+
