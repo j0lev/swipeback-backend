@@ -61,7 +61,7 @@ def submit_text_feedback(
 
 @router.get(
     "/sessions/{session_id}/text-feedback",
-    response_model=List[TextFeedbackPublic]
+    response_model=list[TextFeedbackPublic]
 )
 def get_text_feedback(
     session_id: int,

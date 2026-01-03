@@ -12,7 +12,7 @@ import jwt
 from jwt.exceptions import InvalidTokenError
 
 from pydantic import BaseModel
-from app.models import Session, Metric, Module, Hero
+from app.models import Session, Metric, Hero
 
 
 
@@ -22,7 +22,7 @@ class ModuleBase(SQLModel):
 
 class Module(ModuleBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    user_id: str = Field(foreign_key="userindb.username")
+    user_id: str = Field(foreign_key="userindb.username") # TODO to connect with hero
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class ModuleCreate(ModuleBase):
@@ -32,12 +32,16 @@ class ModulePublic(ModuleBase):
     id: int
     created_at: datetime
 
+class ModuleUpdate(SQLModel):
+    title: str | None = None
+
+
 router = APIRouter(prefix="/modules", tags=["modules"])
 
 @router.post("/", response_model=ModulePublic)
 def create_module(
     module: ModuleCreate,
-    session: SessionDep,
+    session: Session,
     user: CurrentActiveUserDI
 ):
     db_module = Module(
@@ -52,7 +56,7 @@ def create_module(
 
 @router.get("/", response_model=list[ModulePublic]) 
 def read_modules( # to show all modules of this professor
-    session: SessionDep,
+    session: Session,
     user: CurrentActiveUserDI
 ):
     statement = select(Module).where(Module.user_id == user.username)
@@ -61,7 +65,7 @@ def read_modules( # to show all modules of this professor
 @router.get("/{module_id}", response_model=ModulePublic)
 def read_module( # to show the exact module
     module_id: int,
-    session: SessionDep,
+    session: Session,
     user: CurrentActiveUserDI
 ):
     module = session.get(Module, module_id)
@@ -74,8 +78,8 @@ def read_module( # to show the exact module
 @router.patch("/{module_id}", response_model=ModulePublic)
 def update_module(
     module_id: int,
-    module_update: ModuleUpdate,
-    session: SessionDep,
+    module_update: ModuleUpdate, #TODO update integration? i don't know
+    session: Session,
     user: CurrentActiveUserDI
 ):
     module = session.get(Module, module_id)

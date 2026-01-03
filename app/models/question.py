@@ -52,7 +52,7 @@ def create_question(
 
     return question
 
-@router.get("/{session_id}/questions", response_model=List[QuestionPublic])
+@router.get("/{session_id}/questions", response_model=list[QuestionPublic])
 def get_questions(
     session_id: int,
     session: SessionDep

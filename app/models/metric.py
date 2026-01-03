@@ -12,7 +12,7 @@ import jwt
 from jwt.exceptions import InvalidTokenError
 
 from pydantic import BaseModel
-from app.models import Session, Metric, Module, Hero
+from app.models import Session, Module, Hero
 
 class Metric(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -25,7 +25,11 @@ class MetricCreate(SQLModel):
 class MetricPublic(SQLModel):
     id: int
     title: str
-    created_at: datetime
+    #created_at: datetime
+
+class MetricUpdate(SQLModel):
+    title: str | None = None
+
 
 router = APIRouter(tags=["metrics"])
 
@@ -68,7 +72,7 @@ def read_metrics(
 @router.patch("/metrics/{metric_id}", response_model=MetricPublic)
 def update_metric(
     metric_id: int,
-    metric_update: MetricUpdate,
+    metric_update: MetricUpdate, #TODO update integration? i don't know
     session: SessionDep,
     user: CurrentActiveUserDI
 ):

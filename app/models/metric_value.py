@@ -34,7 +34,7 @@ class MetricResult(SQLModel):
     metric_id: int
     title: str
     average: float | None
-    values: List[MetricValuePublic]
+    values: list[MetricValuePublic]
 
 router = APIRouter(prefix="/feedback", tags=["Metric Values"])
 

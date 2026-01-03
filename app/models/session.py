@@ -15,6 +15,9 @@ from app.db import SessionDep
 from app.auth import CurrentActiveUserDI
 
 from sqlmodel import Field, SQLModel, select
+from app.models import Metric, Module, Hero
+from uuid import uuid4
+
 
 class Session(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -48,7 +51,7 @@ def start_session(
     db_session = Session(
         module_id=module_id,
         start_time=datetime.utcnow(),
-        join_code=uuid4().hex[:6].upper(),
+        join_code=uuid4().hex[:6].upper(), #Generates a random UUID (uses random numbers)
         is_active=True
     )
     session.add(db_session)
