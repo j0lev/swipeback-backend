@@ -13,14 +13,14 @@ import jwt
 from jwt.exceptions import InvalidTokenError
 
 from pydantic import BaseModel
-from app.models import Session, Metric, Hero
+from app.models import Metric, Hero
 
 router = APIRouter(prefix="/modules", tags=["modules"])
 
 @router.post("/", response_model=ModulePublic)
 def create_module(
     module: ModuleCreate,
-    session: Session,
+    session: SessionDep,
     user: CurrentActiveUserDI
 ):
     db_module = Module(
@@ -35,7 +35,7 @@ def create_module(
 
 @router.get("/", response_model=list[ModulePublic]) 
 def read_modules( # to show all modules of this professor
-    session: Session,
+    session: SessionDep,
     user: CurrentActiveUserDI
 ):
     statement = select(Module).where(Module.user_id == user.username)
@@ -44,7 +44,7 @@ def read_modules( # to show all modules of this professor
 @router.get("/{module_id}", response_model=ModulePublic)
 def read_module( # to show the exact module
     module_id: int,
-    session: Session,
+    session: SessionDep,
     user: CurrentActiveUserDI
 ):
     module = session.get(Module, module_id)
@@ -58,7 +58,7 @@ def read_module( # to show the exact module
 def update_module(
     module_id: int,
     module_update: ModuleUpdate, #TODO update integration? i don't know
-    session: Session,
+    session: SessionDep,
     user: CurrentActiveUserDI
 ):
     module = session.get(Module, module_id)
