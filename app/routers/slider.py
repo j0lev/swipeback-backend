@@ -31,7 +31,7 @@ def create_slider(
         raise HTTPException(status_code=404, detail="Module not found")
 
     slider = Slider(
-        module=module_id,
+        module_id=module_id,
         text=data.text
     )
 
@@ -41,7 +41,7 @@ def create_slider(
 
     return slider
 
-@router.get("/{module_id}/sliders", response_model=list[SliderPublic])
+@router.get("/sliders/by_module_id/{module_id}", response_model=list[SliderPublic])
 def get_sliders(
     module_id: int,
     session: SessionDep
@@ -52,9 +52,9 @@ def get_sliders(
 
     return sliders
 
-@router.get("/{join_code}/sliders", response_model=list[SliderPublic])
+@router.get("/sliders/by_join_code/{join_code}", response_model=list[SliderPublic])
 def get_sliders(
-    join_code: int,
+    join_code: str,
     session: SessionDep
 ):
     db_session = session.exec(select(Session).where(Session.join_code == join_code)).first()

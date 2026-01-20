@@ -39,7 +39,7 @@ def create_question(
 
     return question
 
-@router.get("/{session_id}/questions", response_model=list[QuestionPublic])
+@router.get("/questions/by_session_id/{session_id}", response_model=list[QuestionPublic])
 def get_questions(
     session_id: int,
     session: SessionDep
@@ -50,9 +50,9 @@ def get_questions(
 
     return questions
 
-@router.get("/{join_code}/questions", response_model=list[QuestionPublic])
+@router.get("/questions/by_join_code/{join_code}", response_model=list[QuestionPublic])
 def get_questions(
-    join_code: int,
+    join_code: str,
     session: SessionDep
 ):
     db_session = session.exec(select(Session).where(Session.join_code == join_code)).first()
