@@ -50,3 +50,18 @@ def get_questions(
 
     return questions
 
+@router.get("/{join_code}/questions", response_model=list[QuestionPublic])
+def get_questions(
+    join_code: int,
+    session: SessionDep
+):
+    db_session = session.exec(select(Session).where(Session.join_code == join_code)).first()
+    if not db_session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    session_id = db_session.id
+    questions = session.exec(
+        select(Question).where(Question.session_id == session_id)
+    ).all()
+
+    return questions
+
