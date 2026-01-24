@@ -70,10 +70,9 @@ def get_sliders(
     sliders = session.exec(
         select(Slider).where(Slider.module_id == module_id)
     ).all()
-    slider_page_title: str = db_module.slider_page_title
     sliders_public = []
     for slider in sliders:
-        slider_public = SliderPublic(id=slider.id, text=slider.text, slider_page_title=slider_page_title)
+        slider_public = SliderPublic(id=slider.id, text=slider.text)
         sliders_public.append(slider_public)
     return sliders_public
 

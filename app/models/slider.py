@@ -26,4 +26,3 @@ class SliderCreate(SQLModel):
 class SliderPublic(SQLModel):
     id: int
     text: str
-    slider_page_title: str | None

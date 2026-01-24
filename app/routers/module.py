@@ -22,7 +22,7 @@ def create_module(
     module: ModuleCreate,
     session: SessionDep,
     user: CurrentActiveUserDI
-):
+):  
     db_module = Module(
         **module.model_dump(),
         user_id=user.username
