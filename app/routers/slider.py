@@ -66,9 +66,14 @@ def get_sliders(
     if not db_module:
         raise HTTPException(status_code=404, detail="Module not found")
     module_id = db_module.id
+
     sliders = session.exec(
         select(Slider).where(Slider.module_id == module_id)
     ).all()
-
-    return sliders
+    slider_page_title: str = db_module.slider_page_title
+    sliders_public = []
+    for slider in sliders:
+        slider_public = SliderPublic(id=slider.id, text=slider.text, slider_page_title=slider_page_title)
+        sliders_public.append(slider_public)
+    return sliders_public
 
