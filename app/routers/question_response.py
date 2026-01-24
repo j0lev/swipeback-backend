@@ -84,3 +84,14 @@ def get_question_results(
         )
 
     return results
+
+@router.delete("/sessions/{session_id}/questions/results}", status_code=204)
+def delete_metric(
+    session_id: int,
+    session: SessionDep,
+    user: CurrentActiveUserDI
+):
+    session.exec(
+        delete(Metric).where(Metric.session_id == session_id)
+    )
+    session.commit()

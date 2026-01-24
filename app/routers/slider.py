@@ -57,12 +57,12 @@ def get_sliders(
     join_code: str,
     session: SessionDep
 ):
-    db_session = session.exec(select(Session).where(Session.join_code == join_code)).first()
+    db_session: Session = session.exec(select(Session).where(Session.join_code == join_code)).first()
     if not db_session:
         raise HTTPException(status_code=404, detail="Session not found")
-    session_id = db_session.id
+    module_id = db_session.module_id
 
-    db_module = session.exec(select(Module).where(Module.id == session_id)).first()
+    db_module = session.exec(select(Module).where(Module.id == module_id)).first()
     if not db_module:
         raise HTTPException(status_code=404, detail="Module not found")
     module_id = db_module.id

@@ -88,5 +88,6 @@ def delete_module(
     if module.user_id != user.username:
         raise HTTPException(status_code=403, detail="Not allowed")
 
+    
     session.delete(module)
     session.commit()

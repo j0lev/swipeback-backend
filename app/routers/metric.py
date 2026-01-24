@@ -11,9 +11,12 @@ from contextlib import asynccontextmanager
 
 import jwt
 from jwt.exceptions import InvalidTokenError
+from sqlalchemy import delete
 
 from pydantic import BaseModel
 from app.models import Session, Module, Hero
+
+from app.routers.metric_value import delete_metric_values
 
 router = APIRouter(tags=["metrics"])
 
@@ -84,4 +87,16 @@ def delete_metric(
         raise HTTPException(status_code=404, detail="Metric not found")
 
     session.delete(metric)
+    session.commit()
+
+@router.delete("/metrics/all/{session_id}", status_code=204)
+def delete_metric(
+    session_id: int,
+    session: SessionDep,
+    user: CurrentActiveUserDI
+):
+    delete_metric_values()
+    session.exec(
+        delete(Metric).where(Metric.session_id == session_id)
+    )
     session.commit()
