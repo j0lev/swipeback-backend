@@ -41,6 +41,7 @@ cd app
 
 - Project structure
 
+```text
 
 app/
 ├── auth.py         # Authentication & Dependencies
@@ -67,6 +68,7 @@ app/
 │   ├── slider.py
 │   └── text_feedback.py
 └── main.py            # FastAPI App
+```
 
 ---
 
