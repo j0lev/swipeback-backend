@@ -18,6 +18,7 @@ from pydantic import BaseModel
 class ModuleBase(SQLModel):
     title: str
     description: str | None = None
+    slider_title: str
 
 class Module(ModuleBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
