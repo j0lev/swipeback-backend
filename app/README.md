@@ -15,7 +15,7 @@ This is a FastAPI-powered backend for Swipeback App.
 ---
 
 ## About
-(Explain the purpose of the project, the problem it solves, and any relevant background.)
+
 Swipeback designed to enable real-time interactions between professors (Users) and students. It supports the creation of modules, management of active lecture sessions via join codes, and various feedback mechanisms (Swiper, Sliders and Text Feedback). Students give anonymous feedback, so that they don't have to be logged in. 
 It helps professors to get feedback for their lectures, in order to evaluate the students satisfaction level and their understanding of course content.
 
